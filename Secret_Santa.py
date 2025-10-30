@@ -26,8 +26,10 @@ def send_email_list(messages):
             server.login(SENDER_EMAIL, PASSWORD)
             for message in messages:
                 server.send_message(message)
+            print("All emails sent successfully!")
     except Exception as e:
         print(f"An error occurred while sending emails: {e}")
+
 '''
 create_email(receiver_email, body):
     Creates an email message.
@@ -47,23 +49,41 @@ create_assignment_list(recipients):
     Creates a list of email messages assigning Secret Santa recipients.
     input: recipients - list of recipient email addresses
     output: list of EmailMessage objects
+
+    TODO: refactor to make it use key value pairs and then return the assignments for easier testing
+          and to remove the message creation from the assignment logic.
 '''
-def create_assignment_list(recipients):
+def create_assignment_list(recipients, debug=False):
     assignees = recipients.copy()
     messages = []
-    for i in range(len(recipients)):
+    i = 0
+    while i <= len(recipients) + 2:
+        # print('iteration',i)
         receiver_email = assignees[i]
         current_recipient = recipients[random.randint(0, len(recipients) - 1)]
         while current_recipient == receiver_email:
             if len(recipients) == 1:
                 print("Last recipient is the same as sender, restarting assignment...")
-                return create_assignment_list(recipients)
+                messages.clear()
+                recipients = assignees.copy()
+                current_recipient = None
+                print("Recipients reset:", recipients)
+                print("Assignees:", assignees)
+                i = 0  
+                break
             current_recipient = recipients[random.randint(0, len(recipients) - 1)]
-
-        recipients.remove(current_recipient)
-        # recipients = [receiver_email] + recipients
-        body = f"You have been assigned {current_recipient} for Secret Santa! Keep it a secret!"
-        messages.append(create_email(receiver_email, body))
+        if current_recipient is not  None:
+            recipients.remove(current_recipient)
+            body = f"You have been assigned {current_recipient} for Secret Santa! Keep it a secret!"
+            messages.append(create_email(receiver_email, body))
+            i += 1
+        else:
+            continue
+        if debug:
+            print(f"Assigned {current_recipient} to {receiver_email}")
+    print("Final assignments:")
+    for msg in messages:
+        print(msg['To'] + " --> " + msg.get_content().split()[4]) 
     return messages
 
 '''
@@ -100,9 +120,10 @@ def get_recipients():
      
 def __main__():
 
-    recipients = get_recipients()
-    messages = create_assignment_list(recipients)
-    send_email_list(messages)
+    # recipients = get_recipients()
+    recipients = ['kikuforrest@gmail.com', 'laurentforrest596@gmail.com','elli.rose.forrest@gmail.com','thekinghobbit@gmail.com']
+    messages = create_assignment_list(recipients, debug=True)
+    # send_email_list(messages)
 
 if __name__ == "__main__":
     __main__()
